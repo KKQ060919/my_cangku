@@ -20,4 +20,18 @@ from django.urls import path, include
 urlpatterns = [
     path('Agentswenda/', include('Agentswenda.urls')),
     path('admin/', admin.site.urls),
+    # 缓存管理模块 - 匹配前端调用路径
+    path('cache_management/api/', include('cache_management.urls')),
+    # 用户行为记录模块 - 匹配前端调用路径
+    path('user_behavior/api/', include('user_behavior.urls')),
+    # 推荐系统模块 - 匹配前端调用路径
+    path('recommendation/api/', include('recommendation.urls')),
+    # RAG检索增强生成模块 - 匹配前端调用路径  
+    path('rag/api/', include('rag.urls')),
+    # 系统监控模块 - 新增系统API
+    path('system/api/', include('system.urls')),
+    # 产品管理模块
+    path('api/products/', include('products.urls')),
+    # 知识库模块
+    path('api/knowledge/', include('knowledge.urls')),
 ]
