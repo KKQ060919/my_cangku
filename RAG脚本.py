@@ -34,14 +34,14 @@ retriever = vector_store.as_retriever(search_kwargs={"k": 5})
 
 # 定义提示模板
 prompt_template = PromptTemplate.from_template("""
-    你是一个专业的股票分析助手，根据以下股票信息回答问题。请提供准确、专业的分析和建议：
+    你是一个专业的商品顾问，根据以下商品信息回答用户问题：
     
-    股票信息：
+    相关商品信息：
     {context}
     
-    问题：{question}
+    用户问题：{question}
     
-    请基于提供的股票数据进行分析，如果涉及投资建议，请提醒这仅供参考，投资有风险。
+    请提供准确、有用的回答，如果信息不足请说明。
     """)
 
 # 构建RAG处理链
@@ -62,7 +62,7 @@ def load_mysql_data():
         port=3306,
         user='root',
         password='123456',
-        database='0902',
+        database='0819',
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
     )
@@ -71,52 +71,46 @@ def load_mysql_data():
 
     try:
         with connection.cursor() as cursor:
-            # 查询股票信息
+            # 查询商品信息（适配0819数据库）
             sql = """
             SELECT 
-                stock_code,
-                stock_name,
-                current_price,
-                one_month_change,
-                one_year_change,
-                exchange,
-                industry,
-                volume,
-                market_cap,
-                last_updated
-            FROM stock_info
+                p.id as product_id,
+                p.name,
+                p.price,
+                p.category,
+                p.brand,
+                p.specifications,
+                p.description
+            FROM products_product p
+            WHERE p.is_hot = 1
             """
 
             cursor.execute(sql)
             results = cursor.fetchall()
 
             for row in results:
-                # 构建股票信息内容
-                content = f"""
-股票代码: {row['stock_code']}
-股票名称: {row['stock_name']}
-当前价格: {row['current_price']}
-一个月变化: {row['one_month_change']}%
-一年变化: {row['one_year_change']}%
-交易所: {row['exchange']}
-行业: {row['industry']}
-成交量: {row['volume']}
-市值: {row['market_cap']}
-最后更新: {row['last_updated']}
-                """.strip()
-                
-                # 创建Document对象
-                doc = Document(
-                    page_content=content,
-                    metadata={
-                        'stock_code': row['stock_code'],
-                        'stock_name': row['stock_name'],
-                        'exchange': row['exchange'],
-                        'industry': row['industry'],
-                        'current_price': str(row['current_price'])
-                    }
-                )
-                documents.append(doc)
+                if row['name'] and row['description']:
+                    # 构造商品信息内容
+                    content = f"""
+商品名称: {row['name']}
+价格: {row['price']}元
+类别: {row['category']}
+品牌: {row['brand']}
+商品描述: {row['description']}
+                    """.strip()
+                    
+                    # 创建Document对象
+                    doc = Document(
+                        page_content=content,
+                        metadata={
+                            'product_id': row['product_id'],
+                            'name': row['name'],
+                            'category': row['category'] or "未分类",
+                            'brand': row['brand'] or "未知品牌",
+                            'price': float(row['price']) if row['price'] else 0
+                        }
+                    )
+                    documents.append(doc)
 
     finally:
         connection.close()
@@ -150,7 +144,7 @@ if __name__ == '__main__':
     initialize_vector_database()
     
     # 测试问答
-    question = "苹果公司(AAPL)的股票表现如何？"
+    question = "推荐一款性价比高的手机"
     answer = chain.invoke(question)
     print(f"\n问题: {question}")
     print(f"回答: {answer}")

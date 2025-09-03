@@ -43,6 +43,13 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'Agentswenda',
+    'cache_management',
+    'knowledge',
+    'products',
+    'rag',
+    'recommendation',
+    'user_behavior',
+    'system',  # 新增系统监控模块
 
 ]
 
@@ -92,6 +99,31 @@ DATABASES = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Redis配置
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0
+
+# 缓存配置
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+# 环境变量配置
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# 阿里云DashScope API密钥
+DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY", "sk-5e387f862dd94499955b83ffe78c722c")
 
 #图片
 MEDIA_URL = '/media/'
